@@ -1,4 +1,4 @@
-package numble.mybox.user.command.domain;
+package numble.mybox.user.user.domain;
 
 import static java.util.Objects.isNull;
 
