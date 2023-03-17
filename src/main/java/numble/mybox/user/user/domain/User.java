@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -44,8 +43,8 @@ public abstract class User implements OidcUser, Serializable {
 
   protected Map<String, Object> attributes;
 
-  @Builder.Default
-  protected Boolean isDeleted = Boolean.FALSE;
+  @Field(name = "is_deleted")
+  protected Boolean isDeleted;
 
   protected User(Map<String, Object> attributes) {
     this.attributes = attributes;
