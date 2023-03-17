@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class CreateFolderRequest {
 
   @NotBlank
-  private String title;
+  private String name;
 
   @NotNull
   private String parentFolderId;

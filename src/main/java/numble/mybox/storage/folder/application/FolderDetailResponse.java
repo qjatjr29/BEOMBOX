@@ -15,9 +15,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 @AllArgsConstructor
 public class FolderDetailResponse {
 
-  private String title;
-  private BigDecimal totalCapacity;
-  private BigDecimal usedCapacity;
+  private String name;
+  private BigDecimal totalSize;
+  private BigDecimal usedSize;
 
   private List<String> subFolders;
 
@@ -28,9 +28,9 @@ public class FolderDetailResponse {
   private LocalDateTime updatedAt;
 
   private FolderDetailResponse (final Folder folder) {
-    this.title = folder.getTitle();
-    this.totalCapacity = folder.getTotalCapacity();
-    this.usedCapacity = folder.getUsedCapacity();
+    this.name = folder.getName();
+    this.totalSize = folder.getTotalSize();
+    this.usedSize = folder.getUsedSize();
     this.subFolders = folder.getSubFolderIds();
     this.createdAt = folder.getCreatedAt();
     this.updatedAt = folder.getUpdatedAt();

@@ -31,8 +31,8 @@ public class Folder implements Serializable {
   @Field(name = "userId")
   private String userId;
 
-  @Field(name = "folder_title")
-  private String title;
+  @Field(name = "folder_name")
+  private String name;
 
   @Field(name = "parent_folder_id")
   private String parentId;
@@ -41,13 +41,13 @@ public class Folder implements Serializable {
   @Builder.Default
   private List<String> subFolderIds = new ArrayList<>();
 
-  @Field(name = "total_capacity")
+  @Field(name = "total_size")
   @Builder.Default
-  private BigDecimal totalCapacity = BigDecimal.ZERO;
+  private BigDecimal totalSize = BigDecimal.ZERO;
 
-  @Field(name = "used_capacity")
+  @Field(name = "used_size")
   @Builder.Default
-  private BigDecimal usedCapacity = BigDecimal.ZERO;
+  private BigDecimal usedSize = BigDecimal.ZERO;
 
   @Field(name = "created_at")
   @CreatedDate
@@ -71,7 +71,7 @@ public class Folder implements Serializable {
   public void addSubFolder(Mono<Folder> save) {
     save.subscribe(folder -> {
       subFolderIds.add(folder.getId());
-      totalCapacity = totalCapacity.add(folder.getTotalCapacity());
+      totalSize = totalSize.add(folder.getTotalSize());
     });
   }
 

@@ -6,6 +6,6 @@ import reactor.core.publisher.Mono;
 
 public interface FolderRepository extends ReactiveMongoRepository<Folder, String> {
 
-  Mono<Folder> findByParentIdAndTitle(String parentId, String title);
+  Mono<Folder> findByParentIdAndName(String parentId, String name);
   Flux<Folder> findAllByParentId(String parentId);
 }

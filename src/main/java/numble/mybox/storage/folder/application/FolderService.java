@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
 @Transactional(readOnly = true)
 public class FolderService {
 
-  private static final BigDecimal DEFAULT_FOLDER_CAPACITY = new BigDecimal("32212254720");
+  private static final BigDecimal DEFAULT_FOLDER_SIZE = new BigDecimal("32212254720");
 
   private final FolderRepository folderRepository;
 
@@ -30,7 +30,7 @@ public class FolderService {
   @Transactional
   public Mono<FolderDetailResponse> createFolder(UserTokenData user, CreateFolderRequest request) {
 
-    return folderRepository.findByParentIdAndTitle(request.getParentFolderId(), request.getTitle())
+    return folderRepository.findByParentIdAndName(request.getParentFolderId(), request.getName())
         .flatMap(existedFolder -> {
           if (!isNull(existedFolder)) {
             throw new ConflictException(ErrorCode.DUPLICATE_FOLDER);
@@ -38,7 +38,7 @@ public class FolderService {
             Folder folder = Folder.builder()
                 .userId(user.getId())
                 .parentId(request.getParentFolderId())
-                .title(request.getTitle())
+                .name(request.getName())
                 .updatedAt(LocalDateTime.now())
                 .build();
             Mono<Folder> save = folderRepository.save(folder);
@@ -60,9 +60,9 @@ public class FolderService {
 
     Folder rootFolder = Folder.builder()
         .userId(event.getUserId())
-        .title(event.getTitle())
+        .name(event.getName())
         .isRoot(Boolean.TRUE)
-        .totalCapacity(DEFAULT_FOLDER_CAPACITY)
+        .totalSize(DEFAULT_FOLDER_SIZE)
         .updatedAt(LocalDateTime.now())
         .build();
 

@@ -9,19 +9,19 @@ import lombok.NoArgsConstructor;
 public class SignupCompletedEvent extends Event {
 
   private String userId;
-  private String title;
+  private String name;
 
   public SignupCompletedEvent(final String userId, final String userNickname) {
     super();
     this.userId = userId;
-    this.title = userNickname + "'s BOX";
+    this.name = userNickname + "'s BOX";
   }
 
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("SignupCompletedEvent{");
     sb.append("userId='").append(userId).append('\'');
-    sb.append(", title='").append(title).append('\'');
+    sb.append(", name='").append(name).append('\'');
     sb.append('}');
     return sb.toString();
   }

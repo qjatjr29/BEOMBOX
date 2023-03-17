@@ -15,15 +15,15 @@ import reactor.core.publisher.Mono;
 public class FolderSummaryResponse {
 
   private String id;
-  private String title;
-  private BigDecimal usedCapacity;
+  private String name;
+  private BigDecimal usedSize;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
   private FolderSummaryResponse (Folder folder) {
     this.id = folder.getId();
-    this.title = folder.getTitle();
-    this.usedCapacity = folder.getUsedCapacity();
+    this.name = folder.getName();
+    this.usedSize = folder.getUsedSize();
     this.createdAt = folder.getCreatedAt();
     this.updatedAt = folder.getUpdatedAt();
   }
