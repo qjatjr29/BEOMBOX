@@ -2,6 +2,7 @@ package numble.mybox.storage.folder.application;
 
 import static java.util.Objects.isNull;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import numble.mybox.common.error.ErrorCode;
 import numble.mybox.common.error.exception.ConflictException;
@@ -17,6 +18,8 @@ import reactor.core.publisher.Mono;
 @Service
 @Transactional(readOnly = true)
 public class FolderService {
+
+  private static final BigDecimal DEFAULT_FOLDER_CAPACITY = new BigDecimal("32212254720");
 
   private final FolderRepository folderRepository;
 
@@ -59,6 +62,7 @@ public class FolderService {
         .userId(event.getUserId())
         .title(event.getTitle())
         .isRoot(Boolean.TRUE)
+        .totalCapacity(DEFAULT_FOLDER_CAPACITY)
         .updatedAt(LocalDateTime.now())
         .build();
 
