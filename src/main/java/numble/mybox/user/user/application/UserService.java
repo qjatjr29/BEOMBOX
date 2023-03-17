@@ -3,6 +3,7 @@ package numble.mybox.user.user.application;
 import numble.mybox.common.error.ErrorCode;
 import numble.mybox.common.error.exception.NotFoundException;
 import numble.mybox.common.event.Events;
+import numble.mybox.common.event.SignupCompletedEvent;
 import numble.mybox.user.user.domain.User;
 import numble.mybox.user.user.domain.UserRepository;
 import numble.mybox.user.user.domain.UserTokenData;
@@ -26,7 +27,7 @@ public class UserService {
     Mono<User> savedUser = userRepository.save(user);
 
     return savedUser.flatMap(u -> {
-      SignupSuccessEvent event = new SignupSuccessEvent(u.getId(), u.getNickname());
+      SignupCompletedEvent event = new SignupCompletedEvent(u.getId(), u.getNickname());
       Events.raise(event);
       return Mono.just(u);
     });
@@ -40,7 +41,7 @@ public class UserService {
 
   public Mono<User> getUserByEmailAndPrinciple(String email, String provider) {
     return userRepository.findByEmailAndProvider(email, provider)
-        .switchIfEmpty(Mono.error(new NotFoundException(ErrorCode.USER_NOT_FOUND)));
+        .switchIfEmpty(Mono.empty());
   }
 
   @Transactional
