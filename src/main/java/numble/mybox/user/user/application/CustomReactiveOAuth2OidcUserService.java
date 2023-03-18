@@ -1,9 +1,13 @@
 package numble.mybox.user.user.application;
 
+import java.util.HashMap;
+import java.util.Map;
 import numble.mybox.user.user.domain.User;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcReactiveOAuth2UserService;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.userinfo.ReactiveOAuth2UserService;
+import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -32,7 +36,17 @@ public class CustomReactiveOAuth2OidcUserService implements
 
       return userService
           .getUserByEmailAndPrinciple(user.getEmail(), user.getProvider())
-          .switchIfEmpty(Mono.defer(() -> userService.save(user)));
+          .switchIfEmpty(Mono.defer(() -> userService.save(user)))
+          .flatMap(savedUser -> {
+            Map<String, Object> attributes = new HashMap<>(oidcUser.getAttributes());
+            attributes.put("userId", savedUser.getId());
+            OidcUserInfo userInfo = new OidcUserInfo(attributes);
+            return Mono.just(new DefaultOidcUser(
+                oidcUser.getAuthorities(),
+                oidcUser.getIdToken(),
+                userInfo,
+                "userId"));
+          });
     });
   }
 

@@ -1,11 +1,13 @@
 package numble.mybox.user.user.application;
 
-import numble.mybox.user.user.domain.UserRepository;
+import java.util.HashMap;
+import java.util.Map;
 import numble.mybox.user.user.domain.User;
 import org.springframework.security.oauth2.client.userinfo.DefaultReactiveOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.ReactiveOAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -32,7 +34,12 @@ public class CustomReactiveOAuth2UserService implements ReactiveOAuth2UserServic
       User user = OAuth2UserFactory.getOAuth2User(registrationId, e.getAttributes());
       return userService
           .getUserByEmailAndPrinciple(user.getEmail(), user.getProvider())
-          .switchIfEmpty(Mono.defer(() -> userService.save(user)));
+          .switchIfEmpty(Mono.defer(() -> userService.save(user)))
+          .flatMap(savedUser -> {
+            Map<String, Object> attributes = new HashMap<>(e.getAttributes());
+            attributes.put("userId", savedUser.getId());
+            return Mono.just(new DefaultOAuth2User(e.getAuthorities(), attributes, "id"));
+          });
     });
 
   }
