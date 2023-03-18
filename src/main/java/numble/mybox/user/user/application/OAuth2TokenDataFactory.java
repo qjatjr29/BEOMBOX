@@ -2,12 +2,10 @@ package numble.mybox.user.user.application;
 
 import java.util.Map;
 import numble.mybox.user.user.domain.AuthProvider;
-import numble.mybox.user.user.domain.User;
 import numble.mybox.user.user.domain.UserRepository;
 import numble.mybox.user.user.domain.UserTokenData;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
 @Component
 public class OAuth2TokenDataFactory {
