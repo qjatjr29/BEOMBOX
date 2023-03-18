@@ -12,8 +12,6 @@ public class Events {
 
   public static void raise(Object event) {
     if (publisher != null) {
-      System.out.println("publish!");
-      System.out.println(event.getClass());
       publisher.publishEvent(event);
     }
   }
