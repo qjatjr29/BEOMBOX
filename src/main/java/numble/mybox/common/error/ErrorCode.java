@@ -23,8 +23,11 @@ public enum ErrorCode {
 
   EXPIRED_VERIFICATION_TOKEN(403, "AUTH-001", "인증 토큰이 만료된 경우"),
   INVALID_VERIFICATION_TOKEN(403, "AUTH-002", "토큰이 유효하지 않은 경우"),
-  CERTIFICATION_TYPE_NOT_MATCH(403, "AUTH-003", "인증 타입이 일치하지 않은 경우");
+  CERTIFICATION_TYPE_NOT_MATCH(403, "AUTH-003", "인증 타입이 일치하지 않은 경우"),
 
+  AWS_S3_UPLOAD_FAIL(500, "S3-001", "S3 업로드에 실패했을 경우"),
+  INVALID_FILE(400, "S3-001", "데이터가 없는 파일이 요청된 경우"),
+  INVALID_TYPE_FILE(400, "S3-001", "지원하지 않은 형식의 파일이 들어온 경우");
 
   int statusCode;
   String resultCode;
