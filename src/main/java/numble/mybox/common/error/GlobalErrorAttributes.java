@@ -19,6 +19,7 @@ public class GlobalErrorAttributes extends DefaultErrorAttributes {
 
     if(throwable instanceof BusinessException) {
       BusinessException ex = (BusinessException) getError(request);
+      errorAttributes.remove("error");
       errorAttributes.put("exception", ex.getClass().getSimpleName());
       errorAttributes.put("message", ex.getErrorCode().getMessage());
       errorAttributes.put("status", ex.getErrorCode().getStatusCode());
