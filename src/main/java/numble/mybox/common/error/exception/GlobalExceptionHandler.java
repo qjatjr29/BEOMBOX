@@ -1,49 +1,36 @@
 package numble.mybox.common.error.exception;
 
-import java.util.Map;
-import numble.mybox.common.error.GlobalErrorAttributes;
-import org.springframework.boot.autoconfigure.web.WebProperties.Resources;
-import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
-import org.springframework.boot.web.error.ErrorAttributeOptions;
-import org.springframework.boot.web.reactive.error.ErrorAttributes;
-import org.springframework.context.ApplicationContext;
-import org.springframework.core.annotation.Order;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.ServerCodecConfigurer;
-import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.server.RequestPredicates;
-import org.springframework.web.reactive.function.server.RouterFunction;
-import org.springframework.web.reactive.function.server.RouterFunctions;
-import org.springframework.web.reactive.function.server.ServerRequest;
-import org.springframework.web.reactive.function.server.ServerResponse;
-import reactor.core.publisher.Mono;
+import java.util.List;
+import numble.mybox.common.error.ErrorCode;
+import numble.mybox.common.error.ErrorField;
+import numble.mybox.common.error.ErrorResponseDto;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-@Component
-@Order(-2)
-public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
+@ControllerAdvice
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-  public GlobalExceptionHandler(GlobalErrorAttributes globalErrorAttributes,
-      ApplicationContext applicationContext,
-      ServerCodecConfigurer serverCodecConfigurer) {
-    super(globalErrorAttributes, new Resources(), applicationContext);
-    super.setMessageReaders(serverCodecConfigurer.getReaders());
-    super.setMessageWriters(serverCodecConfigurer.getWriters());
+  // custom exception 처리
+  @ExceptionHandler(BusinessException.class)
+  public ResponseEntity<ErrorResponseDto> handleBusinessException(BusinessException e) {
+    List<ErrorField> errors = e.getErrors();
+    ErrorResponseDto response = ErrorResponseDto.of(e.getErrorCode(), errors);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatusCode()));
   }
 
+  // @Valid 에러
   @Override
-  protected RouterFunction<ServerResponse> getRoutingFunction(ErrorAttributes errorAttributes) {
-    return RouterFunctions.route(RequestPredicates.all(), this::renderErrorResponse);
+  protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+      HttpHeaders headers, HttpStatus status, WebRequest request) {
+
+    return ResponseEntity
+        .badRequest()
+        .body(ErrorResponseDto.from(ErrorCode.INVALID_INPUT_VALUE, ex.getBindingResult()));
   }
-
-  private Mono<ServerResponse> renderErrorResponse(ServerRequest request) {
-
-    Map<String, Object> errorProperties = getErrorAttributes(request, ErrorAttributeOptions.defaults());
-
-    return ServerResponse.status(Integer.parseInt(errorProperties.get("status").toString()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(errorProperties));
-
-  }
-
 }
