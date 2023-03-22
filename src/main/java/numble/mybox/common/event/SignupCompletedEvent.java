@@ -8,19 +8,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SignupCompletedEvent extends Event {
 
-  private String userId;
+  private Long userId;
   private String name;
 
-  public SignupCompletedEvent(final String userId, final String userNickname) {
+  public SignupCompletedEvent(final Long userId, final String name) {
     super();
     this.userId = userId;
-    this.name = userNickname + "'s BOX";
+    this.name = name + "'s BOX";
   }
 
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("SignupCompletedEvent{");
-    sb.append("userId='").append(userId).append('\'');
+    sb.append("userId=").append(userId);
     sb.append(", name='").append(name).append('\'');
     sb.append('}');
     return sb.toString();
