@@ -28,9 +28,9 @@ public class SignupCompletedEventListener {
 
     try {
       SignupCompletedEvent event = objectMapper.readValue(message, SignupCompletedEvent.class);
-      folderService.createRootFolder(event).subscribe();
+      folderService.createRootFolder(event);
     } catch (IOException e) {
-      log.error("SignupCompletedEvent parsing error!");
+      log.error("SignupCompletedEvent parsing error! => {}", e.getMessage());
       throw new RuntimeException();
     }
   }
