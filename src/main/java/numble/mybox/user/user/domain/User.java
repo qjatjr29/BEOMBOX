@@ -2,101 +2,77 @@ package numble.mybox.user.user.domain;
 
 import static java.util.Objects.isNull;
 
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.core.oidc.OidcIdToken;
-import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import numble.mybox.common.domain.BaseEntity;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
-@Document(collection = "user")
+
+@Entity
+@Table(name = "user")
+@Where(clause = "is_deleted = false")
+@SQLDelete(sql = "UPDATE user SET is_deleted = true WHERE id = ?")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class User implements OidcUser, Serializable {
+@AllArgsConstructor
+public class User extends BaseEntity {
 
   @Id
-  protected String id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "user_id")
+  private Long id;
 
-  @Field(name = "name")
-  protected String name;
+  @Column(name = "name")
+  private String name;
 
-  @Field(name = "email")
-  protected String email;
+  @Column(name = "email")
+  private String email;
 
-  @Field(name = "nickname")
-  protected String nickname;
+  @Column(name = "profile_image")
+  private String imageUrl;
 
-  @Field(name = "profile_image")
-  protected String imageUrl;
+  @Column(name = "provider")
+  @Enumerated(EnumType.STRING)
+  private AuthProvider provider;
 
-  @Field(name = "provider")
-  protected String provider;
+  @Column(name = "user_role")
+  @Enumerated(EnumType.STRING)
+  @Builder.Default
+  private Role role = Role.USER;
 
-  protected Map<String, Object> attributes;
+  @Column(name = "is_deleted")
+  @Builder.Default
+  private Boolean isDeleted = Boolean.FALSE;
 
-  @Field(name = "is_deleted")
-  protected Boolean isDeleted;
-
-  protected User(Map<String, Object> attributes) {
-    this.attributes = attributes;
-    this.provider = getAuthProviderEnum().getProviderType();
-    this.isDeleted = Boolean.FALSE;
-    setAttribute();
+  public User updateInfo(final String name, final String imageUrl) {
+    setName(name);
+    setImageUrl(imageUrl);
+    return this;
   }
 
-  protected abstract void setAttribute();
-
-  protected abstract AuthProvider getAuthProviderEnum();
-
-  @Override
-  public Collection<? extends GrantedAuthority> getAuthorities() {
-    return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + getProvider()));
+  public String getUserRole() {
+    return this.role.getRole();
   }
 
-  @Override
-  public Map<String, Object> getClaims() {
-    return this.getAttributes();
-  }
-
-  @Override
-  public OidcUserInfo getUserInfo() {
-    return null;
-  }
-
-  @Override
-  public OidcIdToken getIdToken() {
-    return null;
-  }
-
-  public void updateNickname(final String nickname) {
-    if(!isNull(nickname)) setNickname(nickname);
-  }
-
-  public void updateImageUrl(final String imageUrl) {
-    if(!isNull(imageUrl) && imageUrl.startsWith("http")) setImageUrl(imageUrl);
-    else setImageUrl("");
-  }
-
-  private boolean isBlank(final String target) {
-    if(target.isBlank()) return true;
-    return false;
-  }
-
-  private void setNickname(final String nickname) {
-    this.nickname = nickname;
+  private void setName(final String name) {
+    if(!isNull(name)) this.name = name;
   }
 
   private void setImageUrl(final String imageUrl) {
-    this.imageUrl = imageUrl;
+    if(!imageUrl.isBlank()) this.imageUrl = imageUrl;
   }
 
 }

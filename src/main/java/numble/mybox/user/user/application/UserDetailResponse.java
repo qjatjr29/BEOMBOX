@@ -13,10 +13,9 @@ import numble.mybox.user.user.domain.User;
 @AllArgsConstructor
 public class UserDetailResponse {
 
-  private String id;
+  private Long id;
   private String name;
   private String email;
-  private String nickname;
   private String imageUrl;
   private String provider;
 
@@ -24,9 +23,8 @@ public class UserDetailResponse {
     this.id = user.getId();
     this.name = user.getName();
     this.email = user.getEmail();
-    this.nickname = user.getNickname();
     this.imageUrl = user.getImageUrl();
-    this.provider = user.getProvider();
+    this.provider = user.getProvider().getProviderType();
   }
 
   public static UserDetailResponse of(User user) {

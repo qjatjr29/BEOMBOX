@@ -1,9 +1,10 @@
 package numble.mybox.user.user.domain;
 
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-import reactor.core.publisher.Mono;
 
-public interface UserRepository extends ReactiveMongoRepository<User, String> {
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-  Mono<User> findByEmailAndProvider(String email, String provider);
+public interface UserRepository extends JpaRepository<User, Long> {
+
+  Optional<User> findByEmailAndProvider(String email, AuthProvider provider);
 }
