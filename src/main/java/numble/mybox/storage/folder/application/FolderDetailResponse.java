@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import numble.mybox.storage.folder.domain.Folder;
+import numble.mybox.storage.folder.domain.SubFolder;
 import org.springframework.format.annotation.DateTimeFormat;
 
 @Getter
@@ -19,7 +20,7 @@ public class FolderDetailResponse {
   private BigDecimal totalSize;
   private BigDecimal usedSize;
 
-  private List<String> subFolders;
+  private List<SubFolder> subFolders;
 
   @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
   private LocalDateTime createdAt;
@@ -31,7 +32,7 @@ public class FolderDetailResponse {
     this.name = folder.getName();
     this.totalSize = folder.getTotalSize();
     this.usedSize = folder.getUsedSize();
-    this.subFolders = folder.getSubFolderIds();
+    this.subFolders = folder.getSubFolders();
     this.createdAt = folder.getCreatedAt();
     this.updatedAt = folder.getUpdatedAt();
   }

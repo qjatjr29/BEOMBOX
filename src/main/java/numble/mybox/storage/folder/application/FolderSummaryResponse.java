@@ -7,29 +7,30 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import numble.mybox.storage.folder.domain.Folder;
-import reactor.core.publisher.Mono;
+import numble.mybox.storage.folder.domain.SubFolder;
+
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class FolderSummaryResponse {
 
-  private String id;
+  private Long id;
   private String name;
   private BigDecimal usedSize;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
-  private FolderSummaryResponse (Folder folder) {
-    this.id = folder.getId();
-    this.name = folder.getName();
-    this.usedSize = folder.getUsedSize();
+  private FolderSummaryResponse (SubFolder folder) {
+    this.id = folder.getSubFolderId();
+    this.name = folder.getSubFolderName();
+    this.usedSize = folder.getSubFolderSize();
     this.createdAt = folder.getCreatedAt();
     this.updatedAt = folder.getUpdatedAt();
   }
 
-  public static Mono<FolderSummaryResponse> of(Folder folder) {
-    return Mono.just(new FolderSummaryResponse(folder));
+  public static FolderSummaryResponse ofSubFolder(SubFolder subFolder) {
+    return new FolderSummaryResponse(subFolder);
   }
 
 }
