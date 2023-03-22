@@ -23,6 +23,7 @@ public enum ErrorCode {
   FOLDER_NOT_FOUND(404, "FOLDER-002", "상위 폴더가 없는 경우"),
 
   FILE_ALREADY_EXISTS(409, "FILE-001", "이미 해당 파일이 있는 경우"),
+  INVALID_VERIFICATION_FILE_UPLOAD(403, "FILE-002", "파일을 올릴 권한이 없습니다."),
 
   EXPIRED_VERIFICATION_TOKEN(403, "AUTH-001", "인증 토큰이 만료된 경우"),
   INVALID_VERIFICATION_TOKEN(403, "AUTH-002", "토큰이 유효하지 않은 경우"),
