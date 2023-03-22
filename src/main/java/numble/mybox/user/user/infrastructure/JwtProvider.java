@@ -42,6 +42,7 @@ public class JwtProvider {
     return generateToken(tokenData.getId(),
         tokenData.getEmail(),
         tokenData.getProvider(),
+        tokenData.getRole(),
         accessTokenExpirationTime);
   }
 
@@ -49,11 +50,12 @@ public class JwtProvider {
     return generateToken(tokenData.getId(),
         tokenData.getEmail(),
         tokenData.getProvider(),
+        tokenData.getRole(),
         refreshTokenExpirationTime);
   }
 
   public UserTokenData getTokenData(String token) {
-    return UserTokenData.from(getUserId(token), getUserEmail(token), getUserProvider(token));
+    return UserTokenData.from(getUserId(token), getUserEmail(token), getUserProvider(token), getUserRole(token));
   }
 
   public void validateToken(String token) {
@@ -81,11 +83,12 @@ public class JwtProvider {
     return claims.getExpiration().getTime();
   }
 
-  private String generateToken(String id, String email, String provider, Long expireTime) {
+  private String generateToken(Long id, String email, String provider, String role, Long expireTime) {
     Claims claims = Jwts.claims();
-    claims.put("id", id);
+    claims.put("userId", id);
     claims.put("email", email);
     claims.put("provider", provider);
+    claims.put("role", role);
     Date now = new Date(System.currentTimeMillis());
 
     return Jwts.builder()
@@ -116,10 +119,10 @@ public class JwtProvider {
     return claims.get("email", String.class);
   }
 
-  private String getUserId(String token) {
+  private Long getUserId(String token) {
     if(!isExistToken(token)) throw new BusinessException(ErrorCode.TOKEN_NOT_EXISTS);
     Claims claims = getClaims(token);
-    return claims.get("id", String.class);
+    return claims.get("userId", Long.class);
   }
 
   private String getUserProvider(String token) {
