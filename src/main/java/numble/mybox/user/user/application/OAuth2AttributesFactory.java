@@ -7,11 +7,12 @@ import numble.mybox.user.user.domain.AuthProvider;
 import numble.mybox.user.user.domain.GoogleOAuth2User;
 import numble.mybox.user.user.domain.KakaoOAuth2User;
 import numble.mybox.user.user.domain.NaverOAuth2User;
-import numble.mybox.user.user.domain.User;
+import numble.mybox.user.user.domain.OAuth2Attributes;
 
-public class OAuth2UserFactory {
 
-  public static User getOAuth2User(String registrationId, Map<String, Object> attributes) {
+public class OAuth2AttributesFactory {
+
+  public static OAuth2Attributes getOAuth2User(String registrationId, Map<String, Object> attributes) {
     if (registrationId.equalsIgnoreCase(AuthProvider.GOOGLE.getProviderType())) {
       return new GoogleOAuth2User(attributes);
     }
