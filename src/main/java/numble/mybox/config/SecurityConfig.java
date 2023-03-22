@@ -1,27 +1,31 @@
 package numble.mybox.config;
 
 import numble.mybox.common.presentation.JwtAuthenticationFilter;
+import numble.mybox.user.user.application.CustomOAuth2UserService;
 import numble.mybox.user.user.application.OAuth2SuccessHandler;
+import numble.mybox.user.user.domain.Role;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-@EnableWebFluxSecurity
-@EnableReactiveMethodSecurity
-public class SecurityConfig {
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
   private final OAuth2SuccessHandler oAuth2SuccessHandler;
+  private final CustomOAuth2UserService customOAuth2UserService;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
   public SecurityConfig(
       OAuth2SuccessHandler oAuth2SuccessHandler,
+      CustomOAuth2UserService customOAuth2UserService,
       JwtAuthenticationFilter jwtAuthenticationFilter) {
     this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+    this.customOAuth2UserService = customOAuth2UserService;
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
   }
 
@@ -30,23 +34,27 @@ public class SecurityConfig {
     return PasswordEncoderFactories.createDelegatingPasswordEncoder();
   }
 
-  @Bean
-  public SecurityWebFilterChain securityWebFilterChain(final ServerHttpSecurity serverHttpSecurity) {
-    return serverHttpSecurity
-        .csrf().disable()
+  @Override
+  protected void configure(HttpSecurity http) throws Exception {
+    http
         .httpBasic().disable()
-        .authorizeExchange()
-        .pathMatchers("/login/**").authenticated()
-        .anyExchange().permitAll()
+        .csrf().disable()
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .and()
-        .oauth2Login().authenticationSuccessHandler(oAuth2SuccessHandler)
+        .authorizeRequests()
+        .antMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**").permitAll()
+        .antMatchers("/users/**").hasRole(Role.USER.name())
+        .antMatchers("/folders/**").hasRole(Role.USER.name())
+        .antMatchers("/files/**").hasRole(Role.USER.name())
+        .anyRequest().permitAll()
         .and()
-        .addFilterBefore(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
         .logout()
-        .and().exceptionHandling()
-//        .accessDeniedHandler(((exchange, exception) -> Mono.error(new ApplicationContextException(ACCESS_DENIED))))
-        .and().build();
+        .and()
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .oauth2Login()
+        .successHandler(oAuth2SuccessHandler)
+        .userInfoEndpoint()
+        .userService(customOAuth2UserService);
   }
-
 
 }
