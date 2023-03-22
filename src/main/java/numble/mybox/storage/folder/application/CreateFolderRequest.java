@@ -16,5 +16,5 @@ public class CreateFolderRequest {
   private String name;
 
   @NotNull
-  private String parentFolderId;
+  private Long parentFolderId;
 }
