@@ -5,17 +5,19 @@ import numble.mybox.common.error.ErrorCode;
 import numble.mybox.common.error.exception.BusinessException;
 import numble.mybox.user.user.infrastructure.JwtProvider;
 import org.springframework.core.MethodParameter;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.BindingContext;
-import org.springframework.web.reactive.result.method.HandlerMethodArgumentResolver;
-import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
+
 
 
 @Slf4j
 @Component
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
+
+  private static final String HEADER_AUTHORIZATION = "Authorization";
 
   private final JwtProvider jwtProvider;
 
@@ -29,14 +31,13 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
   }
 
   @Override
-  public Mono<Object> resolveArgument(MethodParameter parameter, BindingContext bindingContext,
-      ServerWebExchange exchange) {
+  public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
 
-    String token = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+    String token = webRequest.getHeader(HEADER_AUTHORIZATION);
 
-    if(token == null || token.length() == 0) throw new BusinessException(
-        ErrorCode.TOKEN_NOT_EXISTS);
-    return Mono.just(jwtProvider.getTokenData(token));
+    if(token == null || token.length() == 0) throw new BusinessException(ErrorCode.TOKEN_NOT_EXISTS);
 
+    return jwtProvider.getTokenData(token).getId();
   }
 }
