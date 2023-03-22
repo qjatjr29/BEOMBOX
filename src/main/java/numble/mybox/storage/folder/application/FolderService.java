@@ -1,19 +1,16 @@
 package numble.mybox.storage.folder.application;
 
-import static java.util.Objects.isNull;
-
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 import numble.mybox.common.error.ErrorCode;
-import numble.mybox.common.error.exception.ConflictException;
+import numble.mybox.common.error.exception.NotFoundException;
 import numble.mybox.common.event.SignupCompletedEvent;
 import numble.mybox.storage.folder.domain.Folder;
 import numble.mybox.storage.folder.domain.FolderRepository;
-import numble.mybox.user.user.domain.UserTokenData;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
 
 @Service
 @Transactional(readOnly = true)
@@ -28,44 +25,50 @@ public class FolderService {
   }
 
   @Transactional
-  public Mono<FolderDetailResponse> createFolder(UserTokenData user, CreateFolderRequest request) {
-
-    return folderRepository.findByParentIdAndName(request.getParentFolderId(), request.getName())
-        .flatMap(existedFolder -> {
-          if (!isNull(existedFolder)) {
-            throw new ConflictException(ErrorCode.DUPLICATE_FOLDER);
-          } else {
-            Folder folder = Folder.builder()
-                .userId(user.getId())
-                .parentId(request.getParentFolderId())
-                .name(request.getName())
-                .updatedAt(LocalDateTime.now())
-                .build();
-            Mono<Folder> save = folderRepository.save(folder);
-            existedFolder.addSubFolder(save);
-            return save.flatMap(f -> Mono.just(FolderDetailResponse.of(f)));
-          }
-        });
-  }
-
-  public Flux<FolderSummaryResponse> findAllSubFolder(String folderId) {
-
-    Flux<Folder> folderList = folderRepository.findAllByParentId(folderId);
-
-    return folderList.flatMap(FolderSummaryResponse::of);
-  }
-
-  @Transactional
-  public Mono<Folder> createRootFolder(SignupCompletedEvent event) {
+  public FolderDetailResponse createRootFolder(SignupCompletedEvent event) {
 
     Folder rootFolder = Folder.builder()
         .userId(event.getUserId())
         .name(event.getName())
         .isRoot(Boolean.TRUE)
         .totalSize(DEFAULT_FOLDER_SIZE)
-        .updatedAt(LocalDateTime.now())
         .build();
 
-    return folderRepository.save(rootFolder);
+    return FolderDetailResponse.of(folderRepository.save(rootFolder));
   }
+
+  @Transactional
+  public FolderDetailResponse createSubFolder(Long userId, CreateFolderRequest request) {
+
+    Folder parentFolder = folderRepository.findByUserIdAndParentFolderId(userId,
+            request.getParentFolderId())
+        .orElseThrow(() -> new NotFoundException(ErrorCode.FOLDER_NOT_FOUND));
+
+    Folder subFolder = Folder.builder()
+        .name(request.getName())
+        .userId(userId)
+        .parentFolderId(request.getParentFolderId())
+        .build();
+
+    parentFolder.addSubFolder(subFolder);
+    return FolderDetailResponse.of(subFolder);
+  }
+
+  public List<FolderSummaryResponse> findAllSubFolder(Long userId, Long folderId) {
+    Folder folder = folderRepository.findByUserIdAndParentFolderId(userId, folderId)
+        .orElseThrow(() -> new NotFoundException(ErrorCode.FOLDER_NOT_FOUND));
+
+    return folder.getSubFolders()
+        .stream()
+        .map(FolderSummaryResponse::ofSubFolder)
+        .collect(Collectors.toList());
+  }
+
+//  public Flux<FolderSummaryResponse> findAllSubFolder(String folderId) {
+//
+//    Flux<Folder> folderList = folderRepository.findAllByParentId(folderId);
+//
+//    return folderList.flatMap(FolderSummaryResponse::of);
+//  }
+
 }

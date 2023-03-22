@@ -1,11 +1,10 @@
 package numble.mybox.storage.folder.domain;
 
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface FolderRepository extends ReactiveMongoRepository<Folder, String> {
+public interface FolderRepository extends JpaRepository<Folder, Long> {
 
-  Mono<Folder> findByParentIdAndName(String parentId, String name);
-  Flux<Folder> findAllByParentId(String parentId);
+  Optional<Folder> findByUserIdAndParentFolderId(Long userId, Long parentFolderId);
 }
