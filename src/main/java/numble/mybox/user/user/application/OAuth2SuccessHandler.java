@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import numble.mybox.user.user.domain.UserTokenData;
 import numble.mybox.user.user.infrastructure.JwtProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
+  @Value("${spring.security.oauth2.redirect-url}")
+  private String redirectUrl;
   private final JwtProvider jwtProvider;
   private final ObjectMapper objectMapper;
 
@@ -43,12 +46,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
       String refreshToken = jwtProvider.generateRefreshToken(tokenData);
 
       // TODO: refreshToken을 Redis에 저장해 관리하기.
-
-      AuthResponse authResponse = new AuthResponse(accessToken, refreshToken);
-
-      // 응답 본문에 토큰 정보 추가
-      String res = objectMapper.writeValueAsString(authResponse);
-      response.getWriter().write(res);
+      response.sendRedirect(redirectUrl+"?accesstoken="+accessToken+"&refreshtoken="+refreshToken);
     }
   }
 }
