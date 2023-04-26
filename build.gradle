@@ -19,8 +19,9 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.7.8'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-webflux', version: '2.6.4'
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '2.7.5'
@@ -28,9 +29,14 @@ dependencies {
 	implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.2'
 	implementation group: 'org.mindrot', name: 'jbcrypt', version: '0.4'
 	implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.8.6'
-	implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-aws', version: '2.2.6.RELEASE'
+
+
+	implementation 'software.amazon.awssdk:s3:2.20.26'
+	implementation 'software.amazon.awssdk:netty-nio-client:2.20.26'
+	implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
+	implementation group: 'commons-codec', name: 'commons-codec', version: '1.9'
+
 	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.mysql:mysql-connector-j'
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.5'
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.5'
 	annotationProcessor 'org.projectlombok:lombok'
