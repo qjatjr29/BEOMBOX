@@ -1,34 +1,57 @@
 package numble.mybox.config;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.springframework.beans.factory.annotation.Value;
+
+import java.net.URI;
+import java.time.Duration;
+import numble.mybox.config.properties.AwsProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Configuration;
 
 
 @Configuration
 public class AwsConfig {
 
-  @Value("${cloud.aws.credentials.access-key}")
-  private String accessKey;
+  private final AwsProperties s3ConfigProperties;
 
-  @Value("${cloud.aws.credentials.secret-key}")
-  private String secretKey;
-
-  @Value("${cloud.aws.region.static}")
-  private String region;
+  public AwsConfig(AwsProperties s3ConfigProperties) {
+    this.s3ConfigProperties = s3ConfigProperties;
+  }
 
   @Bean
-  public AmazonS3Client amazonS3Client() {
-    BasicAWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
+  public S3AsyncClient s3AsyncClient(AwsCredentialsProvider awsCredentialsProvider) {
+    return S3AsyncClient.builder()
+        .httpClient(sdkAsyncHttpClient())
+        .region(Region.of(s3ConfigProperties.getRegion()))
+        .credentialsProvider(awsCredentialsProvider)
+        .endpointOverride(URI.create(s3ConfigProperties.getEndpoint()))
+        .forcePathStyle(true)
+        .serviceConfiguration(s3Configuration()).build();
+  }
 
-    return (AmazonS3Client) AmazonS3ClientBuilder.standard()
-        .withRegion(region)
-        .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+  private SdkAsyncHttpClient sdkAsyncHttpClient() {
+    return NettyNioAsyncHttpClient.builder()
+        .writeTimeout(Duration.ZERO)
+        .maxConcurrency(64)
         .build();
+  }
+
+  private S3Configuration s3Configuration() {
+    return S3Configuration.builder()
+        .checksumValidationEnabled(false)
+        .chunkedEncodingEnabled(true)
+        .build();
+  }
+
+  @Bean
+  AwsCredentialsProvider awsCredentialsProvider() {
+    return () -> AwsBasicCredentials.create(s3ConfigProperties.getAccessKey(), s3ConfigProperties.getSecretKey());
   }
 
 }
