@@ -3,6 +3,7 @@ package numble.mybox.config;
 import java.util.HashMap;
 import java.util.Map;
 import numble.mybox.common.event.SignupCompletedEvent;
+import numble.mybox.config.properties.KafkaProperties;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -17,16 +18,22 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 @Configuration
 public class KafkaProducerConfig {
 
-  @Value("${spring.kafka.producer.bootstrap-servers}")
-  private String bootstrapServers;
+//  @Value("${spring.kafka.producer.bootstrap-servers}")
+//  private String bootstrapServers;
+//
+//  @Value("${spring.kafka.topic.signup-completed}")
+//  private String SIGNUP_COMPLETE_TOPIC;
 
-  @Value("${spring.kafka.topic.signup-completed}")
-  private String SIGNUP_COMPLETE_TOPIC;
+  private final KafkaProperties kafkaProperties;
+
+  public KafkaProducerConfig(KafkaProperties kafkaProperties) {
+    this.kafkaProperties = kafkaProperties;
+  }
 
   @Bean
   public ProducerFactory<String, SignupCompletedEvent> signupCompletedEventProducerFactory() {
     Map<String, Object> configProps = new HashMap<>();
-    configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+    configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getConsumer().getBootstrapServers());
     configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
     return new DefaultKafkaProducerFactory<>(configProps);
@@ -39,9 +46,7 @@ public class KafkaProducerConfig {
 
   @Bean
   public NewTopic signupCompleteTopic() {
-    return new NewTopic(SIGNUP_COMPLETE_TOPIC, 1, (short) 1);
+    return new NewTopic(kafkaProperties.getTopic().getSignupCompleted(), 1, (short) 1);
   }
-
-
 
 }
