@@ -1,9 +1,12 @@
 package numble.mybox.storage.file.domain;
 
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-public interface FileRepository extends JpaRepository<File, Long> {
+public interface FileRepository extends ReactiveMongoRepository<File, String> {
 
-  Boolean existsByFolderIdAndFileName(Long folderId, String originalFilename);
+  Mono<Boolean> existsByFolderIdAndFileName(String folderId, String fileName);
+
+  Flux<File> findAllByUserIdAndFolderId(String userId, String folderId);
 }
