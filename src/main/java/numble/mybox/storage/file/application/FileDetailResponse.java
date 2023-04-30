@@ -1,6 +1,5 @@
 package numble.mybox.storage.file.application;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -13,14 +12,22 @@ import numble.mybox.storage.file.domain.File;
 @AllArgsConstructor
 public class FileDetailResponse {
 
+  private String fileId;
   private String fileName;
-  private BigDecimal fileSize;
+  private Long fileSize;
+  private String folderId;
+  private String userId;
+  private String fileUrl;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
   private FileDetailResponse(File file) {
+    this.fileId = file.getId();
     this.fileName = file.getFileName();
     this.fileSize = file.getFileSize();
+    this.folderId = file.getFolderId();
+    this.userId = file.getUserId();
+    this.fileUrl = file.getFileUrl();
     this.createdAt = file.getCreatedAt();
     this.updatedAt = file.getUpdatedAt();
   }
