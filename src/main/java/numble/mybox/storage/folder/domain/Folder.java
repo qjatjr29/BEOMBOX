@@ -1,83 +1,70 @@
 package numble.mybox.storage.folder.domain;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import numble.mybox.common.domain.BaseEntity;
-import numble.mybox.storage.file.domain.File;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import numble.mybox.common.domain.BaseDocument;
+import numble.mybox.common.error.ErrorCode;
+import numble.mybox.common.error.exception.BadRequestException;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 
-@Entity
-@Table(name = "folder")
-@Where(clause = "is_deleted = false")
-@SQLDelete(sql = "UPDATE folder SET is_deleted = true WHERE id = ?")
+@Document(collection = "folder")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class Folder extends BaseEntity {
+public class Folder extends BaseDocument {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "folder_id")
-  private Long id;
+  private String id;
 
-  @Column(name = "user_id")
-  private Long userId;
+  @Field(name = "user_id")
+  private String userId;
 
-  @Column(name = "folder_name")
+  @Field(name = "folder_name")
   private String name;
 
-  @Column(name = "parent_folder_id")
-  private Long parentFolderId;
+  @Field(name = "parent_folder_id")
+  private String parentFolderId;
 
-  @ElementCollection(fetch = FetchType.EAGER)
-  @CollectionTable(name = "sub_folder", joinColumns = @JoinColumn(name = "folder_id"))
-  private List<SubFolder> subFolders = new ArrayList<>();
-
-  @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<File> files = new ArrayList<>();
-
-  @Column(name = "total_size")
+  @Field(name = "used_size")
   @Builder.Default
-  private BigDecimal totalSize = BigDecimal.ZERO;
+  private Long usedSize = 0L;
 
-  @Column(name = "used_size")
-  @Builder.Default
-  private BigDecimal usedSize = BigDecimal.ZERO;
-
-  @Column(name = "is_root")
+  @Field(name = "is_root")
   @Builder.Default
   private Boolean isRoot = Boolean.FALSE;
 
-  @Column(name = "is_deleted")
+  @Field(name = "is_deleted")
   @Builder.Default
   private Boolean isDeleted = Boolean.FALSE;
 
-  public void addSubFolder(Folder subFolder) {
-    subFolders.add(SubFolder.of(subFolder));
-    usedSize = usedSize.add(subFolder.getUsedSize());
+  public boolean isRoot() {
+    return this.isRoot;
   }
 
-  // Todo : 파일 추가시 폴더 용량 고려 및 증가
+  public void addSize(Long size) {
+    if(size < 0L) throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE);
+    addUsedSize(size);
+  }
+
+  public void subtractSize(Long size) {
+    if(size < 0L) throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE);
+    subtractUsedSize(size);
+  }
+
+  private void addUsedSize(Long size) {
+    this.usedSize += size;
+  }
+
+  private void subtractUsedSize(Long size) {
+    if(this.usedSize >= size) this.usedSize -= size;
+    else throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE);
+  }
 
 }
