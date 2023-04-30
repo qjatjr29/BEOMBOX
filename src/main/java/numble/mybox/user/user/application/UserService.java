@@ -9,6 +9,7 @@ import numble.mybox.user.user.domain.User;
 import numble.mybox.user.user.domain.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 
 @Service
@@ -22,24 +23,26 @@ public class UserService {
   }
 
   @Transactional
-  public User saveOrUpdate(OAuth2Attributes oAuth2Attributes) {
-    User savedUser = userRepository.findByEmailAndProvider(oAuth2Attributes.getEmail(),
+  public Mono<User> saveOrUpdate(OAuth2Attributes oAuth2Attributes) {
+    return userRepository.findByEmailAndProvider(oAuth2Attributes.getEmail(),
             oAuth2Attributes.getProvider())
         .map(u -> u.updateInfo(oAuth2Attributes.getName(), oAuth2Attributes.getImageUrl()))
-        .orElse(oAuth2Attributes.toUser());
-
-    User user = userRepository.save(savedUser);
-    signupEventRaise(user.getId(), user.getName());
-    return user;
+        .switchIfEmpty(Mono.defer(() -> {
+          Mono<User> newUser = userRepository.save(oAuth2Attributes.toUser());
+          return newUser.map(user -> {
+            signupEventRaise(user.getId(), user.getName());
+            return user;
+          });
+        }));
   }
 
-  public UserDetailResponse getUser(Long userId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
-    return UserDetailResponse.of(user);
+  public Mono<UserDetailResponse> getUser(String userId) {
+    Mono<User> user = userRepository.findById(userId)
+        .switchIfEmpty(Mono.error(new NotFoundException(ErrorCode.USER_NOT_FOUND)));
+    return user.map(UserDetailResponse::of);
   }
 
-  private void signupEventRaise(final Long userId, final String userName) {
+  private void signupEventRaise(final String userId, final String userName) {
     SignupCompletedEvent event = new SignupCompletedEvent(userId, userName);
     Events.raise(event);
   }
