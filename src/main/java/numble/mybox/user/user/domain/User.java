@@ -2,58 +2,48 @@ package numble.mybox.user.user.domain;
 
 import static java.util.Objects.isNull;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import numble.mybox.common.domain.BaseEntity;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import numble.mybox.common.domain.BaseDocument;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 
-@Entity
-@Table(name = "user")
-@Where(clause = "is_deleted = false")
-@SQLDelete(sql = "UPDATE user SET is_deleted = true WHERE id = ?")
+@Document(collection = "user")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class User extends BaseEntity {
+public class User extends BaseDocument {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "user_id")
-  private Long id;
+  private String id;
 
-  @Column(name = "name")
+  @Field(name = "name")
   private String name;
 
-  @Column(name = "email")
+  @Field(name = "email")
   private String email;
 
-  @Column(name = "profile_image")
+  @Field(name = "profile_image")
   private String imageUrl;
 
-  @Column(name = "provider")
-  @Enumerated(EnumType.STRING)
+  @Field(name = "storage_size")
+  @Builder.Default
+  private Long storageSize = 1024 * 1024 * 1024 * 30L;
+
+  @Field(name = "provider")
   private AuthProvider provider;
 
-  @Column(name = "user_role")
-  @Enumerated(EnumType.STRING)
+  @Field(name = "user_role")
   @Builder.Default
   private Role role = Role.USER;
 
-  @Column(name = "is_deleted")
+  @Field(name = "is_deleted")
   @Builder.Default
   private Boolean isDeleted = Boolean.FALSE;
 
