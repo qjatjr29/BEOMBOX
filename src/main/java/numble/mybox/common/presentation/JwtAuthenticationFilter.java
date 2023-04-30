@@ -1,26 +1,24 @@
 package numble.mybox.common.presentation;
 
-import java.io.IOException;
 import java.util.Arrays;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import numble.mybox.user.user.domain.Role;
 import numble.mybox.user.user.domain.UserTokenData;
 import numble.mybox.user.user.infrastructure.JwtProvider;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.util.StringUtils;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
 
 
 @Component
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-  private static final String HEADER_AUTHORIZATION = "Authorization";
+public class JwtAuthenticationFilter implements WebFilter {
 
   private final JwtProvider jwtProvider;
 
@@ -29,22 +27,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   }
 
   @Override
-  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-      FilterChain filterChain) throws ServletException, IOException {
+  public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
 
+    String token = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-    String token = request.getHeader(HEADER_AUTHORIZATION);
-
-    if(token != null && token.length() != 0) {
+    if(StringUtils.hasText(token)) {
       jwtProvider.validateToken(token);
       UserTokenData tokenData = jwtProvider.getTokenData(token);
-      Authentication auth = getAuthentication(tokenData);
-      SecurityContextHolder.getContext().setAuthentication(auth);
+      Authentication authentication = getAuthentication(tokenData);
+      ReactiveSecurityContextHolder.getContext().
+          map(sc -> {
+            sc.setAuthentication(authentication);
+            return sc;
+          });
     }
-    filterChain.doFilter(request, response);
+    return chain.filter(exchange);
   }
 
-  public Authentication getAuthentication(UserTokenData tokenData) {
+  private Authentication getAuthentication(UserTokenData tokenData) {
     return new UsernamePasswordAuthenticationToken(tokenData, "",
         Arrays.asList(new SimpleGrantedAuthority(Role.USER.getRole())));
   }
