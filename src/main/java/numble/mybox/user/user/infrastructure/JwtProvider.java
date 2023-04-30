@@ -83,7 +83,7 @@ public class JwtProvider {
     return claims.getExpiration().getTime();
   }
 
-  private String generateToken(Long id, String email, String provider, String role, Long expireTime) {
+  private String generateToken(String id, String email, String provider, String role, Long expireTime) {
     Claims claims = Jwts.claims();
     claims.put("userId", id);
     claims.put("email", email);
@@ -119,10 +119,10 @@ public class JwtProvider {
     return claims.get("email", String.class);
   }
 
-  private Long getUserId(String token) {
+  private String getUserId(String token) {
     if(!isExistToken(token)) throw new BusinessException(ErrorCode.TOKEN_NOT_EXISTS);
     Claims claims = getClaims(token);
-    return claims.get("userId", Long.class);
+    return claims.get("userId", String.class);
   }
 
   private String getUserProvider(String token) {
