@@ -16,7 +16,7 @@ public class OAuth2TokenDataFactory {
 
     if(registrationId.toUpperCase().equals(AuthProvider.GOOGLE.getProviderType())) {
 
-      Long userId = principal.getAttribute("userId");
+      String userId = principal.getAttribute("userId");
       String email = principal.getAttribute("email");
 
       return UserTokenData.from(userId, email, AuthProvider.GOOGLE.getProviderType(), Role.USER.getRole());
@@ -26,7 +26,7 @@ public class OAuth2TokenDataFactory {
 
       Map<String, Object> acounts = (Map<String, Object>) principal.getAttributes().get("kakao_account");
 
-      Long userId = principal.getAttribute("userId");
+      String userId = principal.getAttribute("userId");
       String email = String.valueOf(acounts.get("email"));
 
       return UserTokenData.from(userId, email, AuthProvider.KAKAO.getProviderType(), Role.USER.getRole());
@@ -35,7 +35,7 @@ public class OAuth2TokenDataFactory {
     else if(registrationId.toUpperCase().equals(AuthProvider.NAVER.getProviderType())) {
       Map<String, Object> response = (Map<String, Object>) principal.getAttribute("response");
 
-      Long userId = principal.getAttribute("userId");
+      String userId = principal.getAttribute("userId");
       String email = String.valueOf(response.get("email"));
 
       return UserTokenData.from(userId, email, AuthProvider.NAVER.getProviderType(), Role.USER.getRole());
