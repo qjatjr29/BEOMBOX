@@ -1,6 +1,5 @@
 package numble.mybox.storage.folder.presentation;
 
-import java.util.List;
 import numble.mybox.storage.folder.application.CreateFolderRequest;
 import numble.mybox.storage.folder.application.FolderDetailResponse;
 import numble.mybox.storage.folder.application.FolderService;
@@ -13,6 +12,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/folders")
@@ -25,19 +26,32 @@ public class FolderController {
   }
 
   @PostMapping()
-  public ResponseEntity<FolderDetailResponse> createSubFolder (@CurrentUser Long userId,
+  public Mono<ResponseEntity<FolderDetailResponse>> createSubFolder (@CurrentUser String userId,
       @RequestBody CreateFolderRequest request) {
 
-    FolderDetailResponse response = folderService.createSubFolder(userId, request);
+    Mono<FolderDetailResponse> response = folderService.createSubFolder(userId, request);
 
-    return ResponseEntity.ok(response);
+    return response.map(ResponseEntity::ok);
+  }
+
+  @GetMapping("/subfolder/{folderId}")
+  public Flux<ResponseEntity<FolderSummaryResponse>> findAllSubFolder(@CurrentUser String userId, @PathVariable String folderId) {
+    Flux<FolderSummaryResponse> response = folderService.findAllSubFolder(userId, folderId);
+
+    return response.map(ResponseEntity::ok);
   }
 
   @GetMapping("/{folderId}")
-  public ResponseEntity<List<FolderSummaryResponse>> findAllSubFolder(@CurrentUser Long userId, @PathVariable Long folderId) {
-    List<FolderSummaryResponse> response = folderService.findAllSubFolder(userId, folderId);
+  public Mono<ResponseEntity<FolderDetailResponse>> getFolder(@CurrentUser String userId, @PathVariable String folderId) {
+    Mono<FolderDetailResponse> response = folderService.getFolder(userId, folderId);
 
-    return ResponseEntity.ok(response);
+    return response.map(ResponseEntity::ok);
+  }
+
+  @GetMapping("/root")
+  public Mono<ResponseEntity<FolderDetailResponse>> getRootFolder(@CurrentUser String userId) {
+    Mono<FolderDetailResponse> response = folderService.getRootFolder(userId);
+    return response.map(ResponseEntity::ok);
   }
 
 
