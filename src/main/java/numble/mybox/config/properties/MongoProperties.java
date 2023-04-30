@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 @Component
-@ConfigurationProperties("spring.data.mongodb")
+@ConfigurationProperties("spring.mongodb")
 @Validated
 @Getter
 @Setter
