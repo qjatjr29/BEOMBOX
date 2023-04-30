@@ -1,13 +1,11 @@
 package numble.mybox.storage.folder.application;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import numble.mybox.storage.folder.domain.Folder;
-import numble.mybox.storage.folder.domain.SubFolder;
 
 
 @Getter
@@ -15,22 +13,22 @@ import numble.mybox.storage.folder.domain.SubFolder;
 @AllArgsConstructor
 public class FolderSummaryResponse {
 
-  private Long id;
+  private String id;
   private String name;
-  private BigDecimal usedSize;
+  private Long usedSize;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
-  private FolderSummaryResponse (SubFolder folder) {
-    this.id = folder.getSubFolderId();
-    this.name = folder.getSubFolderName();
-    this.usedSize = folder.getSubFolderSize();
+  private FolderSummaryResponse (final Folder folder) {
+    this.id = folder.getId();
+    this.name = folder.getName();
+    this.usedSize = folder.getUsedSize();
     this.createdAt = folder.getCreatedAt();
     this.updatedAt = folder.getUpdatedAt();
   }
 
-  public static FolderSummaryResponse ofSubFolder(SubFolder subFolder) {
-    return new FolderSummaryResponse(subFolder);
+  public static FolderSummaryResponse ofFolder(final Folder folder) {
+    return new FolderSummaryResponse(folder);
   }
 
 }
