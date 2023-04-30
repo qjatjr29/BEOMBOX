@@ -8,12 +8,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserTokenData {
 
-  private Long id;
+  private String id;
   private String email;
   private String provider;
   private String role;
 
-  private UserTokenData(Long id, String email, String provider, String role) {
+  private UserTokenData(String id, String email, String provider, String role) {
     this.id = id;
     this.email = email;
     this.provider = provider;
@@ -24,7 +24,7 @@ public class UserTokenData {
     return new UserTokenData(user.getId(), user.getEmail(), user.getProvider().getProviderType(), user.getRole().getRole());
   }
 
-  public static UserTokenData from(final Long id, final String email, final String provider, final String role) {
+  public static UserTokenData from(final String id, final String email, final String provider, final String role) {
     return new UserTokenData(id, email, provider, role);
   }
 
