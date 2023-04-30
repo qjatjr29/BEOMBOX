@@ -1,8 +1,8 @@
 package numble.mybox.storage.file.application;
 
-import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.extern.slf4j.Slf4j;
 import numble.mybox.common.error.ErrorCode;
 import numble.mybox.common.error.exception.ForbiddenException;
 import numble.mybox.common.error.exception.NotFoundException;
@@ -10,78 +10,125 @@ import numble.mybox.storage.file.domain.File;
 import numble.mybox.storage.file.domain.FileRepository;
 import numble.mybox.storage.folder.domain.Folder;
 import numble.mybox.storage.folder.domain.FolderRepository;
+import numble.mybox.user.user.domain.UserRepository;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
-
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 public class FileService {
 
   private final FileRepository fileRepository;
   private final FolderRepository folderRepository;
-  private final AwsS3Service s3Service;
+  private final UserRepository userRepository;
+  private final AwsS3Service awsS3Service;
 
   public FileService(FileRepository fileRepository,
-      FolderRepository folderRepository, AwsS3Service s3Service) {
+      FolderRepository folderRepository,
+      UserRepository userRepository, AwsS3Service s3Service) {
     this.fileRepository = fileRepository;
     this.folderRepository = folderRepository;
-    this.s3Service = s3Service;
+    this.userRepository = userRepository;
+    this.awsS3Service = s3Service;
   }
 
   @Transactional
-  public FileDetailResponse uploadFile(Long userId, Long folderId, MultipartFile fileData) {
+  public Mono<FileDetailResponse> uploadFile(String userId, String folderId, FilePart file) {
 
-    Folder folder = folderRepository.findById(folderId)
-        .orElseThrow(() -> new NotFoundException(ErrorCode.FOLDER_NOT_FOUND));
+    return folderRepository.findById(folderId)
+        .switchIfEmpty(Mono.error(new NotFoundException(ErrorCode.FOLDER_NOT_FOUND)))
+        .filter(folder -> Objects.equals(folder.getUserId(), userId))
+        .switchIfEmpty(Mono.error(new ForbiddenException(ErrorCode.INVALID_VERIFICATION_FILE_ACCESS)))
+        // get file size
+        .flatMap(folder -> file.content()
+            .map(DataBuffer::readableByteCount).reduce(0L, Long::sum)
+        // check storage size
+        .flatMap(size -> folderRepository.findByUserIdAndIsRoot(userId)
+              .flatMap(rootFolder ->
+                userRepository.findById(userId)
+                    .flatMap(user -> Mono.just(user.getStorageSize()))
+                    .filter(storageMaxSize -> rootFolder.getUsedSize() + size <= storageMaxSize)
+                    .switchIfEmpty(Mono.error(new ForbiddenException(ErrorCode.EXCEED_MAX_STORAGE_SIZE)))
+                    .thenReturn(size)
+              ))
+        // save file
+        .flatMap(size -> buildFileName(folderId, file.filename())
+            .flatMap(fileName -> {
+              File savedFile = File.builder()
+                  .userId(userId)
+                  .fileName(fileName)
+                  .folderId(folderId)
+                  .fileSize(size)
+                  .build();
 
-    if(!Objects.equals(folder.getUserId(), userId)) throw new ForbiddenException(ErrorCode.INVALID_VERIFICATION_FILE_UPLOAD);
-
-    String filename = setFileName(folderId, fileData.getOriginalFilename());
-
-    String fileUrl = s3Service.uploadFile(folderId, filename, fileData);
-
-    File file = File.builder()
-        .fileName(filename)
-        .folder(folder)
-        .fileSize(BigDecimal.valueOf(fileData.getSize()))
-        .fileUrl(fileUrl)
-        .build();
-
-    fileRepository.save(file);
-
-    return FileDetailResponse.of(file);
+              return fileRepository.save(savedFile)
+                  .flatMap(f -> saveFile(folderId, f))
+                  .thenReturn(fileName);
+            }))
+        // upload file to s3
+        .flatMap(filename -> awsS3Service.upload(file, userId, filename)));
   }
 
-  private String setFileName(Long folderId, String originalFileName) {
+  public Flux<FileSummaryResponse> findAll(String userId, String folderId) {
 
-    if (!fileRepository.existsByFolderIdAndFileName(folderId, originalFileName)) {
-      return originalFileName;
-    }
-
-    AtomicInteger counter = new AtomicInteger(1);
-
-    String[] name = originalFileName.split("\\.");
-    String fileFormat = name[1];
-    String filename = name[0];
-
-    StringBuilder newFileNameBuilder = new StringBuilder();
-
-    do {
-      newFileNameBuilder.setLength(0);
-      newFileNameBuilder.append(filename)
-          .append("(")
-          .append(counter.getAndIncrement())
-          .append(")")
-          .append(".")
-          .append(fileFormat);
-    } while (fileRepository.existsByFolderIdAndFileName(folderId, newFileNameBuilder.toString()));
-
-    return newFileNameBuilder.toString();
-
+    return fileRepository.findAllByUserIdAndFolderId(userId, folderId)
+        .map(FileSummaryResponse::of);
   }
 
+  private Mono<Void> saveFile(String folderId, File file) {
+    return folderRepository.findById(folderId)
+        .flatMap(folder -> addFileSize(folder, file.getFileSize()));
+  }
+
+  private Mono<Void> addFileSize(Folder folder, long size) {
+      folder.addSize(size);
+      return folderRepository.save(folder)
+          .then(Mono.defer(() -> {
+            if(folder.isRoot()) return Mono.empty();
+            return folderRepository.findById(folder.getParentFolderId())
+                .flatMap(parentFolder -> addFileSize(parentFolder, size));
+          }));
+  }
+
+  private Mono<String> buildFileName(String folderId, String originalFileName) {
+
+    return fileRepository.existsByFolderIdAndFileName(folderId, originalFileName)
+        .flatMap(exists -> {
+          if (!exists) return Mono.just(originalFileName);
+
+          String[] name = originalFileName.split("\\.");
+          String fileFormat = name[1];
+          String filename = name[0];
+          AtomicInteger counter = new AtomicInteger(1);
+          StringBuilder newFileNameBuilder = new StringBuilder();
+
+          return Mono.just(filename)
+              .repeat()
+              .flatMap(fn -> fileRepository.existsByFolderIdAndFileName(folderId, fn)
+                  .map(exist -> Tuples.of(fn, exist)))
+              .filter(tuple -> !tuple.getT2())
+              .map(Tuple2::getT1)
+              .map(fn -> {
+                newFileNameBuilder.setLength(0);
+                return newFileNameBuilder
+                    .append(fn)
+                    .append("(")
+                    .append(counter.getAndIncrement())
+                    .append(")")
+                    .append(".")
+                    .append(fileFormat)
+                    .toString();
+              })
+              .next();
+        });
+  }
 }
 
 
