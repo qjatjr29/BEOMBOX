@@ -8,10 +8,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SignupCompletedEvent extends Event {
 
-  private Long userId;
+  private String userId;
   private String name;
 
-  public SignupCompletedEvent(final Long userId, final String name) {
+  public SignupCompletedEvent(final String userId, final String name) {
     super();
     this.userId = userId;
     this.name = name + "'s BOX";

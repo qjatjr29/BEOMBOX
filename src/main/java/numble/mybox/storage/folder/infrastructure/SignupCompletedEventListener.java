@@ -25,10 +25,14 @@ public class SignupCompletedEventListener {
 
   @KafkaListener(topics = "${spring.kafka.topic.signup-completed}")
   public void consume(String message) {
-
     try {
       SignupCompletedEvent event = objectMapper.readValue(message, SignupCompletedEvent.class);
-      folderService.createRootFolder(event);
+      folderService.createRootFolder(event)
+          .subscribe(folderDetailResponse -> {
+            log.info("create root folder : {}", folderDetailResponse.getName());
+          }, error -> {
+            log.error("Error while create root folder : {}", error);
+          });
     } catch (IOException e) {
       log.error("SignupCompletedEvent parsing error! => {}", e.getMessage());
       throw new RuntimeException();
