@@ -40,7 +40,7 @@ public class FolderService {
 
     return folderRepository.findByIdAndUserId(request.getParentFolderId(), userId)
         .switchIfEmpty(Mono.error(new NotFoundException(ErrorCode.FOLDER_NOT_FOUND)))
-        .flatMap(parentFolder -> buildFolderName(parentFolder.getId(), request.getTitle())
+        .flatMap(parentFolder -> buildFolderName(parentFolder.getId(), request.getName())
               .flatMap(folderName -> {
                 Folder subFolder = Folder.builder()
                     .name(folderName)
