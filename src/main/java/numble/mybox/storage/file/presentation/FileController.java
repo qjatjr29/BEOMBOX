@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,5 +52,10 @@ public class FileController {
     return fileService.getFile(userId, fileId).map(ResponseEntity::ok);
   }
 
+  @DeleteMapping("/{fileId}")
+  public Mono<ResponseEntity<Void>> deleteFile(@CurrentUser String userId, @PathVariable String fileId) {
+    return fileService.deleteFile(userId, fileId)
+        .then(Mono.just(ResponseEntity.noContent().build()));
+  }
 
 }

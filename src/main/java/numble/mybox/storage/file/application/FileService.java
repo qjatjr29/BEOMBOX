@@ -68,20 +68,6 @@ public class FileService {
                 )));
   }
 
-  private Mono<FileDetailResponse> saveFileToDatabase(String userId, String folderId, String filename, Long size, String url) {
-
-    File savedFile = File.builder()
-        .userId(userId)
-        .fileName(filename)
-        .folderId(folderId)
-        .fileSize(size)
-        .fileUrl(url)
-        .build();
-
-    return fileRepository.save(savedFile)
-        .flatMap(f -> addFile(folderId, f)
-            .thenReturn(FileDetailResponse.of(f)));
-  }
 
   public Mono<Page<FileSummaryResponse>> findAll(String userId, String folderId, Pageable pageable) {
 
@@ -96,18 +82,50 @@ public class FileService {
         });
   }
 
-  private Mono<Void> addFile(String folderId, File file) {
-    return folderRepository.findById(folderId)
-        .flatMap(folder -> addFileSize(folder, file.getFileSize()));
+  public Mono<FileDetailResponse> getFile(String userId, String fileId) {
+
+    return fileRepository.findByIdAndUserId(fileId, userId)
+        .switchIfEmpty(Mono.defer(() -> Mono.error(new NotFoundException(ErrorCode.FILE_NOT_FOUNT))))
+        .map(FileDetailResponse::of);
   }
 
-  private Mono<Void> addFileSize(Folder folder, long size) {
-      folder.addSize(size);
+  @Transactional
+  public Mono<Void> deleteFile(String userId, String fileId) {
+
+    return fileRepository.findByIdAndUserId(fileId, userId)
+        .switchIfEmpty(Mono.defer(() -> Mono.error(new NotFoundException(ErrorCode.FILE_NOT_FOUNT))))
+        .flatMap(file ->  awsS3Service.delete(userId, file.getFileName())
+            .flatMap(bool -> updateParentFoldersSize(file.getFolderId(), (-1) * file.getFileSize()))
+            .flatMap(f -> fileRepository.delete(file).then()));
+  }
+
+  private Mono<FileDetailResponse> saveFileToDatabase(String userId, String folderId, String filename, Long size, String url) {
+
+    File savedFile = File.builder()
+        .userId(userId)
+        .fileName(filename)
+        .folderId(folderId)
+        .fileSize(size)
+        .fileUrl(url)
+        .build();
+
+    return fileRepository.save(savedFile)
+        .flatMap(f -> updateParentFoldersSize(folderId, f.getFileSize())
+            .thenReturn(FileDetailResponse.of(f)));
+  }
+
+  private Mono<Void> updateParentFoldersSize(String folderId, long filesize) {
+    return folderRepository.findById(folderId)
+        .flatMap(folder -> updateFolderSize(folder, filesize));
+  }
+
+  private Mono<Void> updateFolderSize(Folder folder, long size) {
+      folder.updateSize(size);
       return folderRepository.save(folder)
           .then(Mono.defer(() -> {
             if(folder.isRoot()) return Mono.empty();
             return folderRepository.findById(folder.getParentFolderId())
-                .flatMap(parentFolder -> addFileSize(parentFolder, size));
+                .flatMap(parentFolder -> updateFolderSize(parentFolder, size));
           }));
   }
 
@@ -142,13 +160,6 @@ public class FileService {
               })
               .next();
         });
-  }
-
-  public Mono<FileDetailResponse> getFile(String userId, String fileId) {
-
-    return fileRepository.findByIdAndUserId(fileId, userId)
-        .switchIfEmpty(Mono.defer(() -> Mono.error(new NotFoundException(ErrorCode.FILE_NOT_FOUNT))))
-        .map(FileDetailResponse::of);
   }
 }
 
