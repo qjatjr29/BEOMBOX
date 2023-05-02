@@ -5,6 +5,7 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import org.springframework.data.web.ReactivePageableHandlerMethodArgumentResolver;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import reactor.netty.http.client.HttpClient;
 import numble.mybox.common.presentation.CurrentUserArgumentResolver;
@@ -34,6 +35,7 @@ public class WebFluxConfig implements WebFluxConfigurer{
   public void configureArgumentResolvers(ArgumentResolverConfigurer configurer) {
     WebFluxConfigurer.super.configureArgumentResolvers(configurer);
     configurer.addCustomResolver(currentUserArgumentResolver);
+    configurer.addCustomResolver(new ReactivePageableHandlerMethodArgumentResolver());
   }
 
   @Override
