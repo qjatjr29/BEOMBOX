@@ -12,10 +12,12 @@ import numble.mybox.storage.folder.domain.Folder;
 import numble.mybox.storage.folder.domain.FolderRepository;
 import numble.mybox.user.user.domain.UserRepository;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -76,10 +78,17 @@ public class FileService {
         .flatMap(filename -> awsS3Service.upload(file, userId, filename)));
   }
 
-  public Flux<FileSummaryResponse> findAll(String userId, String folderId) {
+  public Mono<Page<FileSummaryResponse>> findAll(String userId, String folderId, Pageable pageable) {
 
     return fileRepository.findAllByUserIdAndFolderId(userId, folderId)
-        .map(FileSummaryResponse::of);
+        .map(FileSummaryResponse::of)
+        .collectList()
+        .map(list -> {
+          int total = list.size();
+          int start = Math.toIntExact(pageable.getOffset());
+          int end = Math.min((start + pageable.getPageSize()), total);
+          return new PageImpl<>(list.subList(start, end), pageable, total);
+        });
   }
 
   private Mono<Void> saveFile(String folderId, File file) {
