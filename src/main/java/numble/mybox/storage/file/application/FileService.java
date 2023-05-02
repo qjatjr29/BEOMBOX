@@ -1,7 +1,6 @@
 package numble.mybox.storage.file.application;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import numble.mybox.common.error.ErrorCode;
 import numble.mybox.common.error.exception.ForbiddenException;
@@ -18,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -138,26 +138,14 @@ public class FileService {
           String[] name = originalFileName.split("\\.");
           String fileFormat = name[1];
           String filename = name[0];
-          AtomicInteger counter = new AtomicInteger(1);
-          StringBuilder newFileNameBuilder = new StringBuilder();
 
-          return Mono.just(filename)
-              .repeat()
-              .flatMap(fn -> fileRepository.existsByFolderIdAndFileName(folderId, fn)
-                  .map(exist -> Tuples.of(fn, exist)))
-              .filter(tuple -> !tuple.getT2())
-              .map(Tuple2::getT1)
-              .map(fn -> {
-                newFileNameBuilder.setLength(0);
-                return newFileNameBuilder
-                    .append(fn)
-                    .append("(")
-                    .append(counter.getAndIncrement())
-                    .append(")")
-                    .append(".")
-                    .append(fileFormat)
-                    .toString();
-              })
+          return Flux.defer(() -> Flux.range(1, Integer.MAX_VALUE))
+              .map(i -> filename + "(" + i + ")" + "." + fileFormat)
+              .concatMap(fn -> fileRepository.existsByFolderIdAndFileName(folderId, fn)
+                  .map(exist -> Tuples.of(fn, exist))
+                  .filter(tuple -> !tuple.getT2())
+                  .map(Tuple2::getT1)
+                  .switchIfEmpty(Mono.empty()))
               .next();
         });
   }
