@@ -1,7 +1,6 @@
 package numble.mybox.storage.file.presentation;
 
 import numble.mybox.common.presentation.CurrentUser;
-import numble.mybox.storage.file.application.AwsS3Service;
 import numble.mybox.storage.file.application.FileDetailResponse;
 import numble.mybox.storage.file.application.FileService;
 import numble.mybox.storage.file.application.FileSummaryResponse;
@@ -23,12 +22,9 @@ import reactor.core.publisher.Mono;
 public class FileController {
 
   private final FileService fileService;
-  private final AwsS3Service awsS3Service;
 
-  public FileController(FileService fileService,
-      AwsS3Service awsS3Service) {
+  public FileController(FileService fileService) {
     this.fileService = fileService;
-    this.awsS3Service = awsS3Service;
   }
 
   @PostMapping("/upload/{folderId}")
@@ -39,14 +35,20 @@ public class FileController {
     return fileService.uploadFile(userId, folderId, file).map(ResponseEntity::ok);
   }
 
-  @GetMapping("/{folderId}")
-  public Mono<ResponseEntity<Page<FileSummaryResponse>>> findAllFile(
+  @GetMapping("/folder/{folderId}")
+  public Mono<ResponseEntity<Page<FileSummaryResponse>>> getAllFile(
       @CurrentUser String userId,
       @PathVariable String folderId,
       @PageableDefault(page = 0, size = 10) Pageable pageable) {
 
       return fileService.findAll(userId, folderId, pageable)
           .map(filesPage -> ResponseEntity.ok().body(filesPage));
+  }
+
+  @GetMapping("/{fileId}")
+  public Mono<ResponseEntity<FileDetailResponse>> getFileDetail(@CurrentUser String userId, @PathVariable String fileId) {
+
+    return fileService.getFile(userId, fileId).map(ResponseEntity::ok);
   }
 
 

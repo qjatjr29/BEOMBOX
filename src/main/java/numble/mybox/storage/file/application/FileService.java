@@ -11,6 +11,7 @@ import numble.mybox.storage.file.domain.FileRepository;
 import numble.mybox.storage.folder.domain.Folder;
 import numble.mybox.storage.folder.domain.FolderRepository;
 import numble.mybox.user.user.domain.UserRepository;
+import org.apache.el.stream.Stream;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -137,6 +138,13 @@ public class FileService {
               })
               .next();
         });
+  }
+
+  public Mono<FileDetailResponse> getFile(String userId, String fileId) {
+
+    return fileRepository.findByIdAndUserId(fileId, userId)
+        .switchIfEmpty(Mono.defer(() -> Mono.error(new NotFoundException(ErrorCode.FILE_NOT_FOUNT))))
+        .map(FileDetailResponse::of);
   }
 }
 
