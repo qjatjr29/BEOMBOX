@@ -50,7 +50,7 @@ public class AwsS3Service {
     this.webClient = webClient;
   }
 
-  public Mono<FileDetailResponse> upload(FilePart file, String userId, String filename) {
+  public Mono<String> upload(FilePart file, String userId, String filename) {
 
     URI s3Url = getStorageUrl(userId, filename);
 
@@ -61,7 +61,8 @@ public class AwsS3Service {
         .headers(headers -> setHttpHeader(HttpMethod.PUT, headers, s3Url))
         .body(BodyInserters.fromDataBuffers(file.content()))
         .retrieve()
-        .bodyToMono(FileDetailResponse.class);
+        .toBodilessEntity()
+        .map(entity -> s3Url.toString());
   }
 
   private URI getStorageUrl(String userId, String filename) {

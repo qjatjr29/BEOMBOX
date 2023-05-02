@@ -11,7 +11,6 @@ import numble.mybox.storage.file.domain.FileRepository;
 import numble.mybox.storage.folder.domain.Folder;
 import numble.mybox.storage.folder.domain.FolderRepository;
 import numble.mybox.user.user.domain.UserRepository;
-import org.apache.el.stream.Stream;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -61,22 +60,27 @@ public class FileService {
                     .switchIfEmpty(Mono.error(new ForbiddenException(ErrorCode.EXCEED_MAX_STORAGE_SIZE)))
                     .thenReturn(size)
               ))
-        // save file
-        .flatMap(size -> buildFileName(folderId, file.filename())
-            .flatMap(fileName -> {
-              File savedFile = File.builder()
-                  .userId(userId)
-                  .fileName(fileName)
-                  .folderId(folderId)
-                  .fileSize(size)
-                  .build();
+            .flatMap(size -> buildFileName(folderId, file.filename())
+                // upload file to s3
+                .flatMap(filename -> awsS3Service.upload(file, userId, filename)
+                    // save file
+                    .flatMap(url -> saveFileToDatabase(userId, folderId, filename, size, url))
+                )));
+  }
 
-              return fileRepository.save(savedFile)
-                  .flatMap(f -> saveFile(folderId, f))
-                  .thenReturn(fileName);
-            }))
-        // upload file to s3
-        .flatMap(filename -> awsS3Service.upload(file, userId, filename)));
+  private Mono<FileDetailResponse> saveFileToDatabase(String userId, String folderId, String filename, Long size, String url) {
+
+    File savedFile = File.builder()
+        .userId(userId)
+        .fileName(filename)
+        .folderId(folderId)
+        .fileSize(size)
+        .fileUrl(url)
+        .build();
+
+    return fileRepository.save(savedFile)
+        .flatMap(f -> addFile(folderId, f)
+            .thenReturn(FileDetailResponse.of(f)));
   }
 
   public Mono<Page<FileSummaryResponse>> findAll(String userId, String folderId, Pageable pageable) {
@@ -92,7 +96,7 @@ public class FileService {
         });
   }
 
-  private Mono<Void> saveFile(String folderId, File file) {
+  private Mono<Void> addFile(String folderId, File file) {
     return folderRepository.findById(folderId)
         .flatMap(folder -> addFileSize(folder, file.getFileSize()));
   }
