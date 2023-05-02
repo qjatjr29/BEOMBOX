@@ -65,6 +65,18 @@ public class AwsS3Service {
         .map(entity -> s3Url.toString());
   }
 
+  public Mono<Boolean> delete(String userId, String filename) {
+
+    URI s3Url = getStorageUrl(userId, filename);
+
+    return webClient.delete()
+        .uri(s3Url)
+        .headers(headers -> setHttpHeader(HttpMethod.DELETE, headers, s3Url))
+        .retrieve()
+        .bodyToMono(Void.class)
+        .thenReturn(true);
+  }
+
   private URI getStorageUrl(String userId, String filename) {
 
     return UriComponentsBuilder.fromHttpUrl(s3ConfigProperties.getEndpoint())
