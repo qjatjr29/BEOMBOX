@@ -48,22 +48,18 @@ public class Folder extends BaseDocument {
     return this.isRoot;
   }
 
-  public void addSize(Long size) {
-    if(size < 0L) throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE);
-    addUsedSize(size);
+  public void updateSize(Long size) {
+    if(size < 0L) subtractUsedSize(size);
+    else addUsedSize(size);
   }
 
-  public void subtractSize(Long size) {
-    if(size < 0L) throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE);
-    subtractUsedSize(size);
-  }
 
   private void addUsedSize(Long size) {
     this.usedSize += size;
   }
 
   private void subtractUsedSize(Long size) {
-    if(this.usedSize >= size) this.usedSize -= size;
+    if(this.usedSize + size >= 0) this.usedSize += size;
     else throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE);
   }
 

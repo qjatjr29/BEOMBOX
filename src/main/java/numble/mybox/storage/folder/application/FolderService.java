@@ -49,7 +49,7 @@ public class FolderService {
                     .build();
                 return folderRepository.save(subFolder)
                     .flatMap(savedSubFolder -> {
-                      parentFolder.addSize(savedSubFolder.getUsedSize());
+                      parentFolder.updateSize(savedSubFolder.getUsedSize());
                       return folderRepository.save(parentFolder)
                           .then(Mono.just(savedSubFolder));
                     });
