@@ -44,7 +44,7 @@ public class FileService {
   @Transactional
   public Mono<FileDetailResponse> uploadFile(String userId, String folderId, FilePart file) {
 
-    return folderRepository.findById(folderId)
+    return folderRepository.findByIdAndUserId(folderId, userId)
         .switchIfEmpty(Mono.error(new NotFoundException(ErrorCode.FOLDER_NOT_FOUND)))
         .filter(folder -> Objects.equals(folder.getUserId(), userId))
         .switchIfEmpty(Mono.error(new ForbiddenException(ErrorCode.INVALID_VERIFICATION_FILE_ACCESS)))
