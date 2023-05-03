@@ -84,19 +84,21 @@ public class FileService {
 
   public Mono<FileDetailResponse> getFile(String userId, String fileId) {
 
-    return fileRepository.findByIdAndUserId(fileId, userId)
-        .switchIfEmpty(Mono.defer(() -> Mono.error(new NotFoundException(ErrorCode.FILE_NOT_FOUNT))))
-        .map(FileDetailResponse::of);
+    return getFileByUserIdAndFileId(userId, fileId).map(FileDetailResponse::of);
   }
 
   @Transactional
   public Mono<Void> deleteFile(String userId, String fileId) {
 
-    return fileRepository.findByIdAndUserId(fileId, userId)
-        .switchIfEmpty(Mono.defer(() -> Mono.error(new NotFoundException(ErrorCode.FILE_NOT_FOUNT))))
+    return getFileByUserIdAndFileId(userId, fileId)
         .flatMap(file ->  awsS3Service.delete(userId, file.getFileName())
             .flatMap(bool -> updateParentFoldersSize(file.getFolderId(), (-1) * file.getFileSize()))
             .flatMap(f -> fileRepository.delete(file).then()));
+  }
+
+  private Mono<File> getFileByUserIdAndFileId(String userId, String fileId) {
+    return fileRepository.findByIdAndUserId(fileId, userId)
+        .switchIfEmpty(Mono.defer(() -> Mono.error(new NotFoundException(ErrorCode.FILE_NOT_FOUNT))));
   }
 
   private Mono<FileDetailResponse> saveFileToDatabase(String userId, String folderId, String filename, Long size, String url) {
