@@ -10,7 +10,10 @@ import numble.mybox.storage.file.domain.FileRepository;
 import numble.mybox.storage.folder.domain.Folder;
 import numble.mybox.storage.folder.domain.FolderRepository;
 import numble.mybox.user.user.domain.UserRepository;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -66,6 +69,16 @@ public class FileService {
                     // save file
                     .flatMap(url -> saveFileToDatabase(userId, folderId, filename, size, url))
                 )));
+  }
+
+  public Mono<Tuple2<File, Resource>> downloadFile(String userId, String fileId) {
+
+    return getFileByUserIdAndFileId(userId, fileId)
+        .flatMap(file ->
+           DataBufferUtils.join(awsS3Service.download(userId, file.getFileName()))
+              .map(dataBuffer -> new InputStreamResource(dataBuffer.asInputStream()))
+                  .flatMap(inputStreamResource -> Mono.zip(Mono.just(file), Mono.just(inputStreamResource)))
+        );
   }
 
 
