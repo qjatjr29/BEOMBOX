@@ -14,6 +14,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.extern.slf4j.Slf4j;
 import numble.mybox.config.properties.AwsProperties;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 
@@ -63,6 +65,18 @@ public class AwsS3Service {
         .retrieve()
         .toBodilessEntity()
         .map(entity -> s3Url.toString());
+  }
+
+  public Flux<DataBuffer> download(String url) {
+
+    URI downloadUrl = URI.create(url);
+
+    return webClient.get()
+        .uri(downloadUrl)
+        .accept(MediaType.APPLICATION_OCTET_STREAM)
+        .headers(httpHeaders -> setHttpHeader(HttpMethod.GET, httpHeaders, downloadUrl))
+        .retrieve()
+        .bodyToFlux(DataBuffer.class);
   }
 
   public Mono<Boolean> delete(String userId, String filename) {
