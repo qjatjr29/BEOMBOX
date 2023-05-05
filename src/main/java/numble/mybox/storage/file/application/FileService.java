@@ -75,7 +75,7 @@ public class FileService {
 
     return getFileByUserIdAndFileId(userId, fileId)
         .flatMap(file ->
-           DataBufferUtils.join(awsS3Service.download(userId, file.getFileName()))
+           DataBufferUtils.join(awsS3Service.download(file.getFileUrl()))
               .map(dataBuffer -> new InputStreamResource(dataBuffer.asInputStream()))
                   .flatMap(inputStreamResource -> Mono.zip(Mono.just(file), Mono.just(inputStreamResource)))
         );
