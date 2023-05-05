@@ -43,7 +43,8 @@ public class WebFluxConfig implements WebFluxConfigurer{
     registry.addMapping("/**")
         .allowedOrigins("*")
         .allowedMethods("*")
-        .allowedHeaders("*");
+        .allowedHeaders("*")
+        .exposedHeaders("content-disposition");
   }
 
   @Override
