@@ -62,7 +62,7 @@ public class FileService {
               ))
             .flatMap(size -> buildFileName(folderId, file.filename())
                 // upload file to s3
-                .flatMap(filename -> awsS3Service.upload(file, userId, filename)
+                .flatMap(filename -> awsS3Service.upload(file, userId, filename, size)
                     // save file
                     .flatMap(url -> saveFileToDatabase(userId, folderId, filename, size, url))
                 )));
