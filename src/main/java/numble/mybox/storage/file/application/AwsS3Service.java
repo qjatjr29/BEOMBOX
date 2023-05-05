@@ -50,14 +50,14 @@ public class AwsS3Service {
     this.webClient = webClient;
   }
 
-  public Mono<String> upload(FilePart file, String userId, String filename) {
+  public Mono<String> upload(FilePart file, String userId, String filename, long size) {
 
     URI s3Url = getStorageUrl(userId, filename);
 
     return webClient.put()
         .uri(s3Url)
         .contentType(MediaType.APPLICATION_OCTET_STREAM)
-        .contentLength(file.headers().size())
+        .contentLength(size)
         .headers(headers -> setHttpHeader(HttpMethod.PUT, headers, s3Url))
         .body(BodyInserters.fromDataBuffers(file.content()))
         .retrieve()
