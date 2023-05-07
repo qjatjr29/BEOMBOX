@@ -38,8 +38,7 @@ public class FolderService {
   @Transactional
   public Mono<FolderDetailResponse> createSubFolder(String userId, CreateFolderRequest request) {
 
-    return folderRepository.findByIdAndUserId(request.getParentFolderId(), userId)
-        .switchIfEmpty(Mono.error(new NotFoundException(ErrorCode.FOLDER_NOT_FOUND)))
+    return findFolderByIdAndUserId(request.getParentFolderId(), userId)
         .flatMap(parentFolder -> buildFolderName(parentFolder.getId(), request.getName())
               .flatMap(folderName -> {
                 Folder subFolder = Folder.builder()
@@ -71,10 +70,7 @@ public class FolderService {
   }
 
   public Mono<FolderDetailResponse> getFolder(String userId, String folderId) {
-    Mono<Folder> folderMono = folderRepository.findByIdAndUserId(folderId, userId)
-        .switchIfEmpty(Mono.error(new NotFoundException(ErrorCode.FOLDER_NOT_FOUND)));
-
-    return folderMono.map(FolderDetailResponse::of);
+    return findFolderByIdAndUserId(folderId, userId).map(FolderDetailResponse::of);
   }
 
   private Mono<String> buildFolderName(String parentFolderId, String folderName) {
@@ -104,4 +100,8 @@ public class FolderService {
         });
   }
 
+  private Mono<Folder> findFolderByIdAndUserId(String folderId, String userId) {
+    return folderRepository.findByIdAndUserId(folderId, userId)
+        .switchIfEmpty(Mono.error(new NotFoundException(ErrorCode.FOLDER_NOT_FOUND)));
+  }
 }
