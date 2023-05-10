@@ -71,7 +71,7 @@ public class FileController {
       @PathVariable String folderId,
       @PageableDefault(page = 0, size = 10) Pageable pageable) {
 
-      return fileService.findAll(userId, folderId, pageable)
+      return fileService.findAllByUserAndFolder(userId, folderId, pageable)
           .map(filesPage -> ResponseEntity.ok().body(filesPage));
   }
 
