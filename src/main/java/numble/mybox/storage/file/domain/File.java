@@ -41,4 +41,8 @@ public class File extends BaseDocument {
 
   // TODO: 중요표시
 
+  public void delete() {
+    this.isDeleted = true;
+  }
+
 }

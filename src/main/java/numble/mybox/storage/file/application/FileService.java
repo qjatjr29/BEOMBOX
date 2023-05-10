@@ -109,6 +109,15 @@ public class FileService {
             .flatMap(f -> fileRepository.delete(file).then()));
   }
 
+  @Transactional
+  public Mono<Void> deleteAllFileInFolder(String folderId) {
+    return fileRepository.findAllByFolderId(folderId)
+        .flatMap(file -> {
+          file.delete();
+          return fileRepository.save(file);
+        }).then();
+  }
+
   private Mono<File> getFileByUserIdAndFileId(String userId, String fileId) {
     return fileRepository.findByIdAndUserId(fileId, userId)
         .switchIfEmpty(Mono.defer(() -> Mono.error(new NotFoundException(ErrorCode.FILE_NOT_FOUNT))));
