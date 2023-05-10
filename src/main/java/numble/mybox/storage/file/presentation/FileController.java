@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
@@ -79,6 +80,12 @@ public class FileController {
   public Mono<ResponseEntity<FileDetailResponse>> getFileDetail(@CurrentUser String userId, @PathVariable String fileId) {
 
     return fileService.getFile(userId, fileId).map(ResponseEntity::ok);
+  }
+
+  @GetMapping()
+  public Mono<ResponseEntity<Page<FileSummaryResponse>>> getFilesByName(@CurrentUser String userId, @RequestParam String fileName, @PageableDefault(page = 0, size = 10) Pageable pageable) {
+    return fileService.getFilesByName(userId, fileName, pageable)
+        .map(file -> ResponseEntity.ok().body(file));
   }
 
   @DeleteMapping("/{fileId}")

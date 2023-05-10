@@ -1,5 +1,6 @@
 package numble.mybox.storage.file.application;
 
+import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import numble.mybox.common.error.ErrorCode;
@@ -87,17 +88,20 @@ public class FileService {
     return fileRepository.findAllByUserIdAndFolderId(userId, folderId)
         .map(FileSummaryResponse::of)
         .collectList()
-        .map(list -> {
-          int total = list.size();
-          int start = Math.toIntExact(pageable.getOffset());
-          int end = Math.min((start + pageable.getPageSize()), total);
-          return new PageImpl<>(list.subList(start, end), pageable, total);
-        });
+        .map(list -> getFileSummaryResponsePage(pageable, list));
   }
 
   public Mono<FileDetailResponse> getFile(String userId, String fileId) {
 
     return getFileByUserIdAndFileId(userId, fileId).map(FileDetailResponse::of);
+  }
+
+  public Mono<Page<FileSummaryResponse>> getFilesByName(String userId, String fileName,
+      Pageable pageable) {
+    return fileRepository.findAllByUserIdAndFileName(userId, fileName)
+        .map(FileSummaryResponse::of)
+        .collectList()
+        .map(list -> getFileSummaryResponsePage(pageable, list));
   }
 
   @Transactional
@@ -172,6 +176,14 @@ public class FileService {
                   .switchIfEmpty(Mono.empty()))
               .next();
         });
+  }
+
+  private PageImpl<FileSummaryResponse> getFileSummaryResponsePage(Pageable pageable,
+      List<FileSummaryResponse> list) {
+    int total = list.size();
+    int start = Math.toIntExact(pageable.getOffset());
+    int end = Math.min((start + pageable.getPageSize()), total);
+    return new PageImpl<>(list.subList(start, end), pageable, total);
   }
 }
 
