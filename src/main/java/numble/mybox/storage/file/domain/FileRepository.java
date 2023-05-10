@@ -11,4 +11,6 @@ public interface FileRepository extends ReactiveMongoRepository<File, String> {
   Flux<File> findAllByUserIdAndFolderId(String userId, String folderId);
 
   Mono<File> findByIdAndUserId(String fileId, String userId);
+
+  Flux<File> findAllByFolderId(String folderId);
 }

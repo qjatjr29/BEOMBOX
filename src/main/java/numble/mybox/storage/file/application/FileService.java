@@ -82,7 +82,7 @@ public class FileService {
   }
 
 
-  public Mono<Page<FileSummaryResponse>> findAll(String userId, String folderId, Pageable pageable) {
+  public Mono<Page<FileSummaryResponse>> findAllByUserAndFolder(String userId, String folderId, Pageable pageable) {
 
     return fileRepository.findAllByUserIdAndFolderId(userId, folderId)
         .map(FileSummaryResponse::of)
